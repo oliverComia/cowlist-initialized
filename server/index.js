@@ -1,6 +1,7 @@
 // DECLARE ALL VARIABLES
 const express = require("express");
 const db = require("./db");
+const path = require("path");
 
 // DECLARE THE MIDDLEWARE
 const parser = require("body-parser");
@@ -43,11 +44,44 @@ app.post("/api/cows", (req, res) => {
     (err, result) => {
       if (err) res.sendStatus(400);
       else {
-        console.log("result", result);
         res.json(result);
       }
     }
   );
+});
+
+app.put("/api/cows/:id", (req, res) => {
+  let id = path.basename(req.originalUrl);
+  let values, query;
+  if (!req.body.name && req.body.description) {
+    values = [req.body.description, id];
+    query = "UPDATE cows SET description = ? WHERE id = ?;";
+  } else if (!req.body.description && req.body.name) {
+    values = [req.body.name, id];
+    query = "UPDATE cows SET name = ? WHERE id = ?;";
+  } else {
+    values = [req.body.name, req.body.description, id];
+    query = "UPDATE cows SET name = ?, descirption = ? WHERE id = ?;";
+  }
+
+  db.query(query, values, (err, result) => {
+    if (err) {
+      res.sendStatus(404);
+    } else {
+      res.json(result);
+    }
+  });
+});
+
+app.delete("/api/cows/:id", (req, res) => {
+  let id = path.basename(req.originalUrl);
+  db.query("DELETE FROM cows WHERE id = ?;", id, (err, result) => {
+    if (err) {
+      res.sendStatus(500);
+    } else {
+      res.json(result);
+    }
+  });
 });
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
